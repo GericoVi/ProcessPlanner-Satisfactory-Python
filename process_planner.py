@@ -20,6 +20,7 @@ class ProcessGraph:
         '''
         Remove all nodes and edges from graph, and reset the other variables
         Utility function - if we need to remove a requested item, just recalculate the graph, doesn't take long anyway
+        Not currently used, most of the time the class instance is just recreated
         '''
         self.node_id_iterator = 0
         self.graph_nodes        = []
