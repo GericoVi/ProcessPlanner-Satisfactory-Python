@@ -16,7 +16,7 @@ cyto.load_extra_layouts()
 app.layout = html.Div([
     html.H1("Process Network"),
     html.Div(["Item: ",
-        dcc.Input(id='item_input', value='', type='text')
+        dcc.Input(id='item_input', value='smart_plating', type='text')
     ]),
     cyto.Cytoscape(
         id='process_network',
@@ -64,7 +64,7 @@ def update_graph(item_name):
 
             planner.add_request(item_name, 1)
 
-            layout['roots'] = [str(idx) for idx in planner.root_idxs]
+            layout['roots'] = [node for node in planner.root_nodes]
 
             # Get nodes in graph
             for node_name in planner.graph_nodes:

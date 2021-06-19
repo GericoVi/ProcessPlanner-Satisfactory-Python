@@ -70,7 +70,7 @@ class ProcessGraph:
             
             # If it's only a byproduct, only use the unused amount so not to disturb the upstream process
             else:
-                rate_increment = self.graph_nodes[node_name].rate_unused()
+                rate_increment = min(self.graph_nodes[node_name].rate_unused(), self.graph_nodes[requesting_node].rate_needed())
 
             if rate_increment > 0:
                 # Update nodes
@@ -116,11 +116,11 @@ class ProcessGraph:
             Since Dash cytoscape needs edges as input
             '''
             for i,edge in enumerate(self.graph_edges):
-                if edge.target_id == self.graph_nodes[node_name]:
+                if edge.target_id == node_name:
                     builder_node = edge.source_id
 
                     # Only propagate the update upstream if the item node is a 'primary' product - so existing upstream processes don't mess up
-                    if self.graph_nodes[i].primary_item == node_name:
+                    if self.graph_nodes[builder_node].primary_item == node_name:
 
                         # Update rate filled of node - since we'll increase upstream production
                         rate_increment = self.graph_nodes[node_name].rate_requested - self.graph_nodes[node_name].rate_filled
@@ -147,7 +147,7 @@ class ProcessGraph:
             # Find upstream nodes by travelling along edges
             for i,edge in enumerate(self.graph_edges):
                 # Update ingredient nodess
-                if edge.target_id == self.graph_nodes[node_name].node_id:
+                if edge.target_id == node_name:
                     ingredient_node = edge.source_id
 
                     # Get recipe requirements for this item
@@ -167,7 +167,7 @@ class ProcessGraph:
                     pass
 
                 # Update byproduct nodes
-                elif edge.source_id == self.graph_nodes[node_name].node_id:
+                elif edge.source_id == node_name:
                     byproduct_node = edge.target_id
 
                     if self.graph_nodes[byproduct_node].name != self.graph_nodes[node_name].primary_item:
@@ -249,7 +249,7 @@ class ProcessGraph:
             # Check if this item is already on the graph, if so add to it and propagate update upstream
             if ingredient.name in self.graph_nodes:
                 self.graph_nodes[ingredient.name].rate_requested += rate_required
-
+                
                 # Propagate update upstream
                 self.propagate_node_update(ingredient.name)
             else:
@@ -274,6 +274,12 @@ class ProcessGraph:
 if __name__ == '__main__':
     import time
     import pickle
+    import sys
+
+    try:
+        item_request = sys.argv[1]
+    except:
+        item_request = 'smart_plating'
 
     # Read in recipes in pickle file
     with open('asset_data.pickle', 'rb') as outfile:
@@ -285,11 +291,11 @@ if __name__ == '__main__':
     print(f"Setup time: {time.time()-start}")
 
     start = time.time()
-    planner.add_request('turbo_motor', 1)
+    planner.add_request(item_request, 1)
     print(f"Process planning time: {time.time()-start}")
 
     # For confirming that it worked
-    print('\nTurbo motor needs:')
+    print(f'\n{item_request} needs:')
     for root in planner.root_nodes:
         root_node = planner.graph_nodes[root]
         print(f"{round(root_node.rate_produced,1)} {root_node.primary_item} per min")
