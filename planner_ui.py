@@ -67,22 +67,23 @@ def update_graph(item_name):
             layout['roots'] = [str(idx) for idx in planner.root_idxs]
 
             # Get nodes in graph
-            for node in planner.graph_nodes:
+            for node_name in planner.graph_nodes:
+                node = planner.graph_nodes[node_name]
                 if isinstance(node,ItemNode):
                     label = f"{round(node.rate_filled,1)}/{round(node.rate_requested,1)} {node.name} per min"
                 elif isinstance(node,BuildingNode):
                     label = f"{node.name} ({round(node.clock_speed*100,1)}%)"
 
                 elements.append({'data' : {
-                    'id'    : str(node.node_id),
+                    'id'    : node_name,
                     'label' : label
                 }})
 
             # Get connecting edges
             for edge in planner.graph_edges:
                 elements.append({'data' : {
-                    'source'    : str(edge.source_id),
-                    'target'    : str(edge.target_id),
+                    'source'    : edge.source_id,
+                    'target'    : edge.target_id,
                     'weight'    : round(edge.rate,1)
                 }})
 

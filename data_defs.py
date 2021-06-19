@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from os import name
 
 
 @dataclass
@@ -67,21 +68,15 @@ class Component:
 
 
 @dataclass
-class GraphNode():
+class ItemNode():
     '''
-    Generic node on the graph
+    For item nodes on the graph - components or liquids or gases
     '''
-    node_id : int
-    name    : str
-
-
-@dataclass
-class ItemNode(GraphNode):
-    '''
-    For items - components or liquids or gases
-    '''
-    rate_requested  : float     # Amount per min needed downstream
-    rate_filled     : float     # Amount per min provided upstream
+    name            : str               # Unique identifier
+    rate_requested  : float = 0         # Amount per min needed downstream
+    rate_filled     : float = 0         # Amount per min provided upstream
+    primary         : bool  = False     # Is this item node being produced due to upstream requests or as a byproduct
+                                            # For update propagation - whether to increase the upstream building speed or not 
 
     def rate_needed(self):
         '''
@@ -89,11 +84,18 @@ class ItemNode(GraphNode):
         '''
         return self.rate_requested - self.rate_filled
 
+    def rate_unused(self):
+        '''
+        Utility function to get the surplus available rate which could be utilised
+        '''
+        return self.rate_filled - self.rate_requested
+
 @dataclass
-class BuildingNode(GraphNode):
+class BuildingNode():
     '''
-    For production buildings
+    For production building nodes on the graph
     '''     
+    name                    : str       # Unique identifier
     recipe                  : Recipe
     primary_item            : str          
     production_rate_default : float     # Amount of primary item produced per min at 100% clock speed
