@@ -55,6 +55,14 @@ def get_production_buildings(buildings_table: bs, base_link='https://satisfactor
                 page = requests.get(full_link)
                 soup = bs(page.content, 'html.parser')
                 img_url = soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
+                
+                img_url = img_url.split('/')
+                for i,ele in enumerate(img_url):
+                    if '.png' in ele:
+                        idx = i
+                        break
+                img_url = '/'.join(img_url[:idx+1])
+
                 img_data = requests.get(img_url).content
                 image_path = f"images/{building_name}.jpg"
 
@@ -65,7 +73,7 @@ def get_production_buildings(buildings_table: bs, base_link='https://satisfactor
                 image_path = None
 
             # Construct the data class and add to dict
-            buildings[building_name] = Asset(name=building_name, image=image_path, type='building')
+            buildings[building_name] = Asset(name=building_name, image_local=image_path, image_url=img_url, type='building')
 
             print(f"{building_name}...Done")
 
@@ -206,7 +214,7 @@ def parse_crafting(recipe_table: bs) -> list[Recipe]:
     return recipes
 
 
-def read_wiki_page(full_soup: bs, overwrite_existing_image = False) -> dict:
+def read_wiki_page(full_soup: bs) -> dict:
     '''
     Reads the wiki page of a satisfactory object (item, building, etc) and outputs a dataclass containing relevant data
     '''
@@ -228,18 +236,25 @@ def read_wiki_page(full_soup: bs, overwrite_existing_image = False) -> dict:
 
     # Save image
     image_path = f"images/{item_name}.jpg"
-    if overwrite_existing_image or (not overwrite_existing_image and not os.path.isfile(image_path)):
-        try:
-            img_url = full_soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
-            img_data = requests.get(img_url).content
+    try:
+        img_url = full_soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
+        
+        img_url = img_url.split('/')
+        for i,ele in enumerate(img_url):
+            if '.png' in ele:
+                idx = i
+                break
+        img_url = '/'.join(img_url[:idx+1])
+        
+        img_data = requests.get(img_url).content
 
-            with open(image_path, 'wb') as handler:
-                handler.write(img_data)
+        with open(image_path, 'wb') as handler:
+            handler.write(img_data)
 
-        except:
-            image_path = None
-            output['msg'].append( 'Image not found or download failed' )
-            output['error'].append(2)
+    except:
+        image_path = None
+        output['msg'].append( 'Image not found or download failed' )
+        output['error'].append(2)
 
     # Parse section titles
     headings = [element.text.lower() for element in table_of_contents.find_all('span', attrs={'class':'toctext'})]
@@ -333,7 +348,7 @@ def read_wiki_page(full_soup: bs, overwrite_existing_image = False) -> dict:
                 recipes.append(recipe)
 
     # Construct Item data class and put into output dict
-    output['item'] = Asset(name=item_name, image=image_path, type='item', recipes=recipes)
+    output['item'] = Asset(name=item_name, image_local=image_path, image_url=img_url, type='item', recipes=recipes)
 
     return output
 
