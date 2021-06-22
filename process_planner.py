@@ -34,6 +34,9 @@ class ProcessGraph:
         # Add to graph
         self.graph_nodes[node_name] = ItemNode(name= requested_item, rate_requested= requested_amount)
 
+        # First check if there are unused resources (byproducts or buildings) in the graph we can use
+        self.use_resources(node_name)
+
         # Fill request by propagating the node
         self.fill_item_request(node_name)
 
@@ -51,54 +54,43 @@ class ProcessGraph:
         else:
             raise Exception(f'No recipe for {self.graph_nodes[item_node_name].name}')
 
-        # First check if there are unused resources (byproducts or buildings) in the graph we can use
-        self.use_resources(item_node_name)
-
-        if self.graph_nodes[item_node_name].rate_needed() > 0:
-            # Update the graph to add the ingredients and byproducts of this recipe
-            self.build_recipe(recipe, item_node_name)
+        # Update the graph to add the ingredients and byproducts of this recipe
+        self.build_recipe(recipe, item_node_name)
 
 
     def use_resources(self, requesting_node: str):
         '''
-        Checks if nodes currently on the graph can be used to fill the request
+        Checks if nodes currently on the graph can be used to fill the user request
         '''
-        def use_node(node_name: str):
-            # If this item is being made 'on-purpose', we can safely increase its production to meet the request
-            if self.graph_nodes[node_name].primary:
-                rate_increment = self.graph_nodes[requesting_node].rate_needed()
-            
-            # If it's only a byproduct, only use the unused amount so not to disturb the upstream process
-            else:
-                rate_increment = min(self.graph_nodes[node_name].rate_unused(), self.graph_nodes[requesting_node].rate_needed())
-
-            if rate_increment > 0:
-                # Update nodes
-                self.graph_nodes[requesting_node].rate_filled += rate_increment
-                self.graph_nodes[node_name].rate_requested += rate_increment
-                self.propagate_node_update(node_name)
-
-                # Add edge
-                self.graph_edges.append(GraphEdge(
-                    source_id= node_name,
-                    target_id= requesting_node,
-                    item_name= node_name,
-                    rate=      rate_increment
-                ))
-
-        # Are we filling an item node - i.e. a user request
+        # Quick check
         if isinstance(self.graph_nodes[requesting_node], ItemNode):
+            # User requested items will have this flag to separate it from items within the process
+            # i.e so they don't merge and can be identified easily
             item_name = requesting_node.replace('_OUT', '')
 
             # Is this item already on the graph?
             if item_name in self.graph_nodes:
-                use_node(item_name)
+                # If this item is being made 'on-purpose', we can safely increase its production to meet the request
+                if self.graph_nodes[item_name].primary:
+                    rate_increment = self.graph_nodes[requesting_node].rate_needed()
+                
+                # If it's only a byproduct, only use the unused amount so not to disturb the upstream process
+                else:
+                    rate_increment = min(self.graph_nodes[item_name].rate_unused(), self.graph_nodes[requesting_node].rate_needed())
 
-        # Are we filling a building node = attempy to fill the recipe's ingredient requirements with existing nodes
-        elif isinstance(self.graph_nodes[requesting_node], BuildingNode):
-            for ingredient in self.graph_nodes[requesting_node].recipe.ingredients:
-                if ingredient.name in self.graph_nodes:
-                    use_node(ingredient.name)
+                if rate_increment != 0:
+                    # Update nodes
+                    self.graph_nodes[requesting_node].rate_filled += rate_increment
+                    self.graph_nodes[item_name].rate_requested += rate_increment
+                    self.propagate_node_update(item_name)
+
+                    # Add edge
+                    self.graph_edges.append(GraphEdge(
+                        source_id= item_name,
+                        target_id= requesting_node,
+                        item_name= item_name,
+                        rate=      rate_increment
+                    ))
 
 
     def propagate_node_update(self, node_name: str):
@@ -252,9 +244,12 @@ class ProcessGraph:
                 
                 # Propagate update upstream
                 self.propagate_node_update(ingredient.name)
+
             else:
                 self.graph_nodes[ingredient.name] = ItemNode(name= ingredient.name, rate_requested= rate_required)
                 
+            # Check if the request has been filled - could have been only partially filled by already present nodes (byproducts)
+            if self.graph_nodes[ingredient.name].rate_needed() > 0:
                 # Fill item node request
                 self.fill_item_request(ingredient.name)
 

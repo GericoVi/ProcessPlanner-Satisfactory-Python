@@ -176,7 +176,7 @@ def parse_crafting(recipe_table: bs) -> list[Recipe]:
                         products.append(Component(item_name, quantity, rate, energy_rate))
 
             # Manufacturer recipes have multiple rows of input in the wiki (and manual crafting stations)
-            if building_name == 'manufacturer' or building_name == 'craft_bench' or building_name == 'equipment_workshop':
+            if building_name == 'manufacturer' or building_name == 'blender' or building_name == 'craft_bench' or building_name == 'equipment_workshop':
                 new_recipe = False
             else:
                 recipes.append(Recipe(recipe_name, ingredients, building_name, products))
