@@ -423,7 +423,7 @@ def assets_to_json(asset_data: dict, output_file: str = 'asset_data.json'):
     '''
     import json
     
-    flat_data = []
+    flat_data = {}
 
     # Loop through all assets in list and flatten the classes within classes into dictionaries
     for key in asset_data:
@@ -441,7 +441,7 @@ def assets_to_json(asset_data: dict, output_file: str = 'asset_data.json'):
         dictionary = vars(asset)
         dictionary['recipes'] = recipes
 
-        flat_data.append(dictionary)
+        flat_data[key] = dictionary
 
     with open(output_file, 'w') as outfile:
         json.dump(flat_data, outfile, indent=2)
