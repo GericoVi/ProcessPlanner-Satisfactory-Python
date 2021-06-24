@@ -69,6 +69,8 @@ def update_graph(item_name):
         with open('asset_data.pickle', 'rb') as infile:
             asset_data = pickle.load(infile)
 
+        item_name = item_name.replace(' ','_').lower()
+
         # Check if valid item
         if item_name in asset_data:
 
