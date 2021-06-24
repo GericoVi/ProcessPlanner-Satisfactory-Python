@@ -3,3 +3,4 @@ images/
 __pycache__
 sandbox.py
 *.xlsx
+*.json

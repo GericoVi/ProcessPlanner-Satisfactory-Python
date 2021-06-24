@@ -4,11 +4,7 @@
 ###
 
 import requests
-import os
 from bs4 import BeautifulSoup as bs
-import pickle
-from tqdm import tqdm
-import logging
 from data_defs import Recipe, Component, Asset
 
 
@@ -388,12 +384,13 @@ def get_items_and_recipes(items_table: bs, base_link='https://satisfactory.fando
     return items, recipes
 
 
-if __name__ == '__main__':
-    recipes_file = 'recipes.pickle'
-    asset_data_file = 'asset_data.pickle'
+def get_all_asset_data(wiki_url: str = 'https://satisfactory.fandom.com/wiki/Satisfactory_Wiki'):
+    '''
+    Get buildings and item data from the satisfactory wiki and return a list of Asset classes
+    '''
 
     # Get content of satisfactory wiki home page
-    page = requests.get('https://satisfactory.fandom.com/wiki/Satisfactory_Wiki')
+    page = requests.get(wiki_url)
     soup = bs(page.content, 'html.parser')
 
     # Get data and images for all production buildings
@@ -403,23 +400,60 @@ if __name__ == '__main__':
     print()
     # Get data and images for all items
     items_table = find_navigation_table(soup, 'Item')
-    items, recipes = get_items_and_recipes(items_table)
+    items, _ = get_items_and_recipes(items_table)
 
-    asset_data = buildings | items
+    return buildings | items
 
-    # Write data to files
-    with open(recipes_file, 'wb') as outfile:
-        pickle.dump(recipes, outfile)
 
-    print()
-    print(f"Recipes saved in {recipes_file}")
+def assets_to_pickle(asset_data: dict, output_file: str = 'asset_data.pickle'):
+    '''
+    Save asset data to a pickle file
+    '''
+    import pickle
 
-    with open(asset_data_file, 'wb') as outfile:
+    with open(output_file, 'wb') as outfile:
         pickle.dump(asset_data, outfile)
 
-    print(f"Asset data saved in {asset_data_file}")
+    print(f"Asset data saved in {output_file}")
 
 
-    # page = requests.get('https://satisfactory.fandom.com/wiki/Medicinal_Inhaler')
-    # soup = bs(page.content, 'html.parser')
-    # read_wiki_page(soup)
+def assets_to_json(asset_data: dict, output_file: str = 'asset_data.json'):
+    '''
+    Save asset data to a json file - for interoperability
+    '''
+    import json
+    
+    flat_data = []
+
+    # Loop through all assets in list and flatten the classes within classes into dictionaries
+    for key in asset_data:
+        asset = asset_data[key]
+
+        recipes = []
+        if asset.recipes is not None:
+            for recipe in asset.recipes:
+                recipe.products = [vars(product) for product in recipe.products]
+                recipe.ingredients = [vars(ingredient) for ingredient in recipe.ingredients]
+
+                recipes.append(vars(recipe))
+
+        
+        dictionary = vars(asset)
+        dictionary['recipes'] = recipes
+
+        flat_data.append(dictionary)
+
+    with open(output_file, 'w') as outfile:
+        json.dump(flat_data, outfile, indent=2)
+
+
+if __name__ == '__main__':
+    
+    asset_data = get_all_asset_data()
+    assets_to_pickle(asset_data)
+
+    # import pickle
+    # with open('asset_data.pickle', 'rb') as infile:
+    #     asset_data = pickle.load(infile)
+
+    # assets_to_json(asset_data)
