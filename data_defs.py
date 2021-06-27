@@ -8,7 +8,6 @@ class Asset:
     For asset data
     '''
     name: str
-    image_local: str
     image_url: str
     type: str
     recipes: list = None

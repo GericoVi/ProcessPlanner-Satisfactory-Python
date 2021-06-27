@@ -4,6 +4,7 @@
 ###
 
 import requests
+import os
 from bs4 import BeautifulSoup as bs
 from data_defs import Recipe, Component, Asset
 
@@ -46,30 +47,21 @@ def get_production_buildings(buildings_table: bs, base_link='https://satisfactor
             building_name = name.lower()
 
             full_link = f"{base_link}{name}"
-            # Get image
-            try:
-                page = requests.get(full_link)
-                soup = bs(page.content, 'html.parser')
-                img_url = soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
-                
-                img_url = img_url.split('/')
-                for i,ele in enumerate(img_url):
-                    if '.png' in ele:
-                        idx = i
-                        break
-                img_url = '/'.join(img_url[:idx+1])
 
-                img_data = requests.get(img_url).content
-                image_path = f"images/{building_name}.jpg"
-
-                with open(image_path, 'wb') as handler:
-                    handler.write(img_data)
-            except:
-                print( f"Image not found or download failed for {full_link}" )
-                image_path = None
+            # Get image url - so the Dash app can use it
+            page = requests.get(full_link)
+            soup = bs(page.content, 'html.parser')
+            img_url = soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
+            
+            img_url = img_url.split('/')
+            for i,ele in enumerate(img_url):
+                if '.png' in ele:
+                    idx = i
+                    break
+            img_url = '/'.join(img_url[:idx+1])
 
             # Construct the data class and add to dict
-            buildings[building_name] = Asset(name=building_name, image_local=image_path, image_url=img_url, type='building')
+            buildings[building_name] = Asset(name=building_name, image_url=img_url, type='building')
 
             print(f"{building_name}...Done")
 
@@ -230,28 +222,16 @@ def read_wiki_page(full_soup: bs) -> dict:
         output['error'].append(1)
         return output
 
-    # Save image
-    image_path = f"images/{item_name}.jpg"
-    try:
-        img_url = full_soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
+    # Get image url - so the Dash app can use it
+    img_url = full_soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
+    
+    img_url = img_url.split('/')
+    for i,ele in enumerate(img_url):
+        if '.png' in ele:
+            idx = i
+            break
+    img_url = '/'.join(img_url[:idx+1])
         
-        img_url = img_url.split('/')
-        for i,ele in enumerate(img_url):
-            if '.png' in ele:
-                idx = i
-                break
-        img_url = '/'.join(img_url[:idx+1])
-        
-        img_data = requests.get(img_url).content
-
-        with open(image_path, 'wb') as handler:
-            handler.write(img_data)
-
-    except:
-        image_path = None
-        output['msg'].append( 'Image not found or download failed' )
-        output['error'].append(2)
-
     # Parse section titles
     headings = [element.text.lower() for element in table_of_contents.find_all('span', attrs={'class':'toctext'})]
     numbers  = [element.text.split('.') for element in table_of_contents.find_all('span', attrs={'class':'tocnumber'})]
@@ -344,7 +324,7 @@ def read_wiki_page(full_soup: bs) -> dict:
                 recipes.append(recipe)
 
     # Construct Item data class and put into output dict
-    output['item'] = Asset(name=item_name, image_local=image_path, image_url=img_url, type='item', recipes=recipes)
+    output['item'] = Asset(name=item_name, image_url=img_url, type='item', recipes=recipes)
 
     return output
 
