@@ -55,7 +55,7 @@ def get_production_buildings(buildings_table: bs, base_link='https://satisfactor
             
             img_url = img_url.split('/')
             for i,ele in enumerate(img_url):
-                if '.png' in ele:
+                if '.png' in ele  or '.gif' in ele:
                     idx = i
                     break
             img_url = '/'.join(img_url[:idx+1])
@@ -224,10 +224,10 @@ def read_wiki_page(full_soup: bs) -> dict:
 
     # Get image url - so the Dash app can use it
     img_url = full_soup.find(attrs={'class':'infobox-table'}).find(attrs={'class':'image'}).find('img')['src']
-    
+
     img_url = img_url.split('/')
     for i,ele in enumerate(img_url):
-        if '.png' in ele:
+        if '.png' in ele or '.gif' in ele:
             idx = i
             break
     img_url = '/'.join(img_url[:idx+1])
