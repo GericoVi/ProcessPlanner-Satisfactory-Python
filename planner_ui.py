@@ -14,13 +14,20 @@ cyto.load_extra_layouts()
 
 # Initialise layout of web app
 app.layout = html.Div([
-    html.H1("Process Network"),
+    # For storing this session's data in the browser - don't store as globals so multiple instances can run
     dcc.Store(id='memory', data={'requested_items':{}}),
+
+    html.H1("Production Planner"),
+    
+    # Item inputs 
     html.Div(["Item request: ",
         dcc.Input(id='item_input', type='text', style= {'width': '20%'}),
         html.Button(id='submit', type='submit', children='submit')
     ]),
+
+    # Results
     html.Div(children= [
+        # Raw materials needed for requested items and production rates
         html.Div(
             style= {'display': 'inline-block', 'verticalAlign': 'top'}, 
             children= [
@@ -30,6 +37,8 @@ app.layout = html.Div([
                 )
             ],
         ),
+
+        # Graph of production process
         cyto.Cytoscape(
             id='process_network',
             elements=[],
@@ -58,21 +67,8 @@ app.layout = html.Div([
             ]
         )
     ]
-    ),
-    # html.H2("Raw materials required per min (at steady state)"),
-    # html.Div(id='raw_materials')
+    )
 ])
-
-# @app.callback(
-#     Output(component_id='memory', component_property='data'),
-#     Input(component_id='submit', component_property='n_clicks'),
-#     State(component_id='item_inputs', component_property='value'),
-#     State(component_id='memory', component_property='data')
-# )
-# def testsubmit(n_clicks, item_names, memory):
-#     print(item_names, n_clicks, memory)   
-
-#     return 0
 
 @app.callback(
     Output(component_id='process_network', component_property='elements'),                  # For updating the graph
@@ -88,9 +84,6 @@ app.layout = html.Div([
 def add_item(n_clicks, input_ids, item_amounts, item_name, memory):
     elements = []
     mats = []
-
-    print(input_ids)
-    print(memory)
 
     # Check if the amounts were changed
     for i, amount in enumerate(item_amounts):
