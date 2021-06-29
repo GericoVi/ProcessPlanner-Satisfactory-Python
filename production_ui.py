@@ -87,6 +87,9 @@ def add_item(n_clicks, input_ids, item_amounts, item_name, memory):
 
     # Check if the amounts were changed
     for i, amount in enumerate(item_amounts):
+        if amount is None:
+            amount = 0
+        
         if memory['requested_items'][input_ids[i]['index']] != amount:
             memory['requested_items'][input_ids[i]['index']] = amount
 
@@ -164,4 +167,4 @@ def add_item(n_clicks, input_ids, item_amounts, item_name, memory):
 
 
 if __name__ == '__main__':
-    app.run_server(debug=True)
+    app.run_server(debug=True, port=8051)
