@@ -21,7 +21,7 @@ app.layout = html.Div([
     cyto.Cytoscape(
         id='process_network',
         elements=[],
-        layout={'name': 'breadthfirst'},
+        layout={'name': 'dagre'},
         style={'width': '1500px', 'height': '2000px'},
         stylesheet=[
             {
@@ -31,17 +31,19 @@ app.layout = html.Div([
                     'line-color': '#ccc',
                     'mid-target-arrow-color': 'red',
                     'mid-target-arrow-shape': 'triangle',
-                    'arrow-scale': 2
+                    'arrow-scale': 0.8,
+                    'font-size': '8px'
                 }
             },
             {
                 'selector': 'node',
                 'style': {
                     'label': 'data(label)',
-                    'width': 90,
-                    'height': 80,
+                    'width': 30,
+                    'height': 30,
                     'background-fit': 'cover',
-                    'background-image': 'data(image)'
+                    'background-image': 'data(image)',
+                    'font-size': '8px'
                 }
             }
         ]
@@ -59,8 +61,7 @@ app.layout = html.Div([
 def update_graph(item_names):
     elements = []
     layout = {
-        'name': 'breadthfirst',
-        'roots': []
+        'name': 'dagre'
     }
     mats = []
 
@@ -81,14 +82,11 @@ def update_graph(item_names):
 
                 planner.add_request(item_name, 1)
 
-                # layout['roots'] = [node for node in planner.root_nodes]
-                layout['roots'].append(f'{item_name}_OUT')
-
                 # Get nodes in graph
                 for node_name in planner.graph_nodes:
                     node = planner.graph_nodes[node_name]
                     if isinstance(node,ItemNode):
-                        label = f"{round(node.rate_filled,1)}/{round(node.rate_requested,1)} {node.name} per min"
+                        label = f"{round(node.rate_filled,1)} {' '.join(node.name.split('_'))} per min"
                     elif isinstance(node,BuildingNode):
                         label = f"{node.name} ({round(node.clock_speed*100,1)}%)"
 
