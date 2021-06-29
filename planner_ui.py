@@ -16,7 +16,7 @@ cyto.load_extra_layouts()
 app.layout = html.Div([
     html.H1("Process Network"),
     html.Div(["Item: ",
-        dcc.Input(id='item_inputs', value='smart plating', type='text')
+        dcc.Input(id='item_inputs', value='smart plating, versatile framework, automated wiring', type='text')
     ]),
     cyto.Cytoscape(
         id='process_network',
@@ -73,7 +73,10 @@ def update_graph(item_names):
         planner = ProcessGraph(asset_data)
 
         # Split up item requests
-        names = item_names.split(',')
+        names = []
+        for item in item_names.split(', '):
+            names += item.split(',')
+
         for item_name in names:
             item_name = item_name.replace(' ','_').lower()
             
