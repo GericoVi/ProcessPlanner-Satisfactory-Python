@@ -173,7 +173,10 @@ def calculate_production(n_clicks, memory):
     planner = ProcessGraph(asset_data)
 
     # Compute the production process which gives the requested item ratio given the available materials
-    planner.mats_utilisation(memory['raw_materials'], memory['requested_items'])
+    error_msg = planner.mats_utilisation(memory['raw_materials'], memory['requested_items'])
+
+    if error_msg is not None:
+        return elements, error_msg
 
     # Get nodes in graph
     for node_name in planner.graph_nodes:
