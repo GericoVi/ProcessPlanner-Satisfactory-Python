@@ -172,41 +172,8 @@ def calculate_production(n_clicks, memory):
         asset_data = pickle.load(infile)
     planner = ProcessGraph(asset_data)
 
-    request_items = []
-    request_ratio = np.array([])
-    for key, val in memory['requested_items'].items():
-        # Do a preliminary calculation of raw material requirements
-        planner.add_request(key, val)
-
-        # Extract into lists for easier manipulation later
-        request_items.append(key)
-        request_ratio = np.append(request_ratio, val)
-
-    # Extract raw material requirements into lists/numpy arrays
-    raw_mats = []
-    raw_required = np.array([])
-    raw_actual = np.array([])
-    for root in planner.root_nodes:
-        root_node = planner.graph_nodes[root]
-        raw_mats.append(root_node.primary_item)
-        raw_required = np.append(raw_required, root_node.rate_produced)
-
-        # And check if all raw materials are present at all
-        if root_node.primary_item in memory['raw_materials']:
-            raw_actual = np.append(raw_actual, memory['raw_materials'][root_node.primary_item] )
-        else:
-            return elements, f"Missing raw material: {' '.join(root_node.primary_item.split('_'))}"
-
-    # Get constraining material and get actual amounts we can produce
-    raw_availability = raw_actual / raw_required
-    constraint = np.argmin( raw_availability )
-    
-    actual_production = (request_ratio/raw_required[constraint]) * raw_actual[constraint]
-
-    # Calculate network again with new ratio
-    planner.reset_graph()
-    for i,item in enumerate(request_items):
-        planner.add_request(item, actual_production[i])
+    # Compute the production process which gives the requested item ratio given the available materials
+    planner.mats_utilisation(memory['raw_materials'], memory['requested_items'])
 
     # Get nodes in graph
     for node_name in planner.graph_nodes:

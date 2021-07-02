@@ -1,4 +1,5 @@
 from data_defs import Recipe, ItemNode, BuildingNode, GraphEdge
+import numpy as np
 
 class ProcessGraph:
     '''
@@ -11,6 +12,7 @@ class ProcessGraph:
         self.graph_nodes        = {}    
         self.graph_edges        = []
         self.root_nodes         = []    # Keep track of root nodes for laying out graph later
+        self.available_mats     = {}    # Can load in the available raw materials we can use for production - for calculating optimal resource utilisation
 
 
     def reset_graph(self):
@@ -264,6 +266,61 @@ class ProcessGraph:
         if len(recipe.ingredients) == 0:
             # If there's no ingredients, this is an extractor/miner building
             self.root_nodes.append(building_node_name)
+
+
+    def mats_utilisation(self, available_mats: dict, request_ratios: dict):
+        '''
+        Calculates the process which produces a set of requested items at a requested ratio given a set of available materials
+        available_mats - {item_name: amount_available}
+        request_ratios - {item_name: ratio}
+        Returns None or an error message for handling by calling script
+        '''
+
+        # Check inputs
+        if len(request_ratios) == 0:
+            return "No requested items"
+        if not isinstance(request_ratios, dict):
+            raise TypeError("Items request and their ratios should be given as a dictionary")
+
+        # First do a preliminary calculation to get the raw material ratio requirements
+        production_ratio = np.array([])
+        for item, ratio in request_ratios.items():
+            self.add_request(item, ratio)
+
+            production_ratio = np.append(production_ratio, ratio)
+
+        missing_mats = []
+        mats_required = np.array([])
+        mats_actual = np.array([])
+        for root in self.root_nodes:
+            # Extract ratios into numpy arrays so we can do some fast operations on them
+            mats_required = np.append(mats_required, self.graph_nodes[root].rate_produced)
+
+            try:
+                mats_actual = np.append(mats_actual, available_mats[self.graph_nodes[root].primary_item])
+
+            except KeyError:
+                # Also check if any raw materials have not been provided at all
+                missing_mats.append(self.graph_nodes[root].primary_item)
+
+        # Return if there are missing mats
+        if len(missing_mats) > 0:
+            return f"Missing raw materials {(', '.join(missing_mats)).replace('_',' ')}"
+
+        # Get limiting material
+        mats_availability = mats_actual / mats_required
+        limiting_idx = np.argmin(mats_availability)
+
+        # Get actual amounts of requested items we can produce
+        production_amount = (production_ratio / mats_required[limiting_idx]) * mats_actual[limiting_idx]
+
+        # Recalculate the graph with these new item request amounts 
+        # - no significant speed difference between this and updating the individual node requests and propagating upstream, this is actually slightly faster in some cases
+        self.reset_graph()
+        for i,item in enumerate(request_ratios):
+            self.add_request(item, production_amount[i])
+
+        return None
 
     
 if __name__ == '__main__':
