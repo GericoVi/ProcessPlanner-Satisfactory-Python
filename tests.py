@@ -180,8 +180,8 @@ def matsutilisation(verbose):
         if verbose:
             print('ALL TESTS PASSED')
             print()
-        # else:
-        #     print('[matutilisation] test PASSED')
+        else:
+            print('[matutilisation] test PASSED')
         return True
     else:
         print('[matutilisation] test FAILED')
