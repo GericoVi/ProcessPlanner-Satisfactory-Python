@@ -72,13 +72,7 @@ class ProcessGraph:
 
             # Is this item already on the graph?
             if item_name in self.graph_nodes:
-                # If this item is being made 'on-purpose', we can safely increase its production to meet the request
-                if self.graph_nodes[item_name].primary:
-                    rate_increment = self.graph_nodes[requesting_node].rate_needed()
-                
-                # If it's only a byproduct, only use the unused amount so not to disturb the upstream process
-                else:
-                    rate_increment = min(self.graph_nodes[item_name].rate_unused(), self.graph_nodes[requesting_node].rate_needed())
+                rate_increment = min(self.graph_nodes[item_name].rate_unused(), self.graph_nodes[requesting_node].rate_needed())
 
                 if rate_increment != 0:
                     # Update nodes

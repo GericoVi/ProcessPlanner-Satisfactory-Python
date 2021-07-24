@@ -75,9 +75,7 @@ class ItemNode():
     name            : str               # Unique identifier
     rate_requested  : float = 0         # Amount per min needed downstream
     rate_filled     : float = 0         # Amount per min provided upstream
-    primary         : bool  = False     # Is this item node being produced due to upstream requests or as a byproduct
-                                            # For update propagation - whether to increase the upstream building speed or not 
-
+    
     def rate_needed(self):
         '''
         Utility function to get the rate still needed to be fulfilled
