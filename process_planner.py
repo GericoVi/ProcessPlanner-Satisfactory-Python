@@ -104,11 +104,6 @@ class ProcessGraph:
 
         if isinstance(self.graph_nodes[node_name], ItemNode):
             # Find this node's upstream builder, if it has one
-            '''
-            TO DO: Store connection information in the nodes? So that we don't need to loop the list of edges
-            But then will need some post processing after network calculation to be able to visualise
-            Since Dash cytoscape needs edges as input
-            '''
             for i,edge in enumerate(self.graph_edges):
                 if edge.target_id == node_name:
                     builder_node = edge.source_id
